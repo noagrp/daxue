@@ -1,0 +1,28 @@
+class DaxueEngine{
+  constructor(data){
+    this.data=data;this.sections=[...(data.sections||[])];
+    this.map=new Map(this.sections.map(x=>[x.id,x]));
+    this.groups=[...(data.meta&&data.meta.groups||[])];
+    this.groupMap=new Map(this.groups.map(x=>[x.id,x]));
+  }
+  getMeta(){return this.data.meta||{};}
+  list(){return this.sections.slice();}
+  get(id){return this.map.get(id)||null;}
+  indexOf(id){return this.sections.findIndex(x=>x.id===id);}
+  getNext(id){const i=this.indexOf(id);return i>=0&&i<this.sections.length-1?this.sections[i+1]:null;}
+  getPrevious(id){const i=this.indexOf(id);return i>0?this.sections[i-1]:null;}
+  getGroup(id){return this.groupMap.get(id)||null;}
+  search(q){
+    const s=String(q||"").trim().toLowerCase();if(!s)return this.list();
+    return this.sections.filter(x=>{
+      const g=this.getGroup(x.group);
+      return [x.title,g&&g.name,...(x.original||[]),x.explanation,x.note,x.textStatus,...(x.terms||[]).flat()].filter(Boolean).join(" ").toLowerCase().includes(s);
+    });
+  }
+}
+async function loadDaxueEngine(url="./data/daxue.json"){
+  const r=await fetch(url,{cache:"no-cache"});if(!r.ok)throw new Error("Unable to load 大学 data");
+  return new DaxueEngine(await r.json());
+}
+if(typeof window!=="undefined"){window.DaxueEngine=DaxueEngine;window.loadDaxueEngine=loadDaxueEngine;}
+if(typeof module!=="undefined"&&module.exports)module.exports={DaxueEngine,loadDaxueEngine};
